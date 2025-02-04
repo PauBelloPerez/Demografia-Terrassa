@@ -838,10 +838,10 @@
 .back-button {
             position: fixed;
             top: 10px; /* Ajusta esta cantidad según tu preferencia */
-            left: 10px; /* Ajusta esta cantidad según tu preferencia */
+            left: 100px; /* Ajusta esta cantidad según tu preferencia */
             z-index: 999; /* Asegura que el botón esté sobre otros elementos si es necesario */
             padding: 10px 50px;
-            background-color: #B5B5B5; /* Color de fondo del botón */
+            background-color: gray; /* Color de fondo del botón */
             color: #000000; /* Color del texto del botón */
             border: none;
             cursor: pointer;
@@ -989,7 +989,7 @@
 
 
     <div class="navbar"> 
-        <button class="back-button" onclick="goBack()">Inici</button>
+        <button class="btn" onclick="window.location.href='index.html';">Inici</button>
         <button onclick="location.href='Població.html'">Població</button>
         <button onclick="location.href='EdatMitja.html'" selected>Edat Mitjana</button>
         <button onclick="location.href='Menors18.html'">Menors de 18</button>
@@ -999,6 +999,7 @@
         <button onclick="location.href='RàtioP80P20.html'">Ràtio P80/P20</button>
         <button onclick="location.href='Gini.html'" >Índex de Gini</button>
     </div>
+
 
     <div id="hover-popup">
         <div class="popup-header-small">
