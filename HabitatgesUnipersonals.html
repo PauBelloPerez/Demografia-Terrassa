@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Simple</title>
+    <link rel="stylesheet" href="styles3.css">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #popup-container {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            width: 350px;
+            display: none; /* Initially hidden */
+        }
+
+        .popup-header {
+            background-color: #374547;
+            color: #fff;
+            padding: 5px 10px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .popup-group {
+        border: 1px solid #ddd; /* Bordes ligeros alrededor del grupo */
+        border-radius: 5px; /* Bordes redondeados */
+        padding: 10px; /* Espacio interno */
+        margin-bottom: 10px; /* Espacio entre los grupos */
+        background-color: #f9f9f9; /* Fondo ligeramente gris */
+        }
+
+        .popup-group p {
+            margin: 5px 0; /* Márgenes más pequeños */
+        }
+
+        .popup-group strong {
+            color: #333; /* Texto en un gris más oscuro */
+        }
+
+        .popup-group:last-child {
+            margin-bottom: 0; /* Elimina el margen inferior del último grupo */
+        }
+
+        #popup-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #popup-container {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            width: 350px;
+            display: none; /* Initially hidden */
+        }
+
+        .popup-header {
+            background-color: #7b7b7b;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .popup-group {
+            border: 2px solid #ddd; /* Bordes ligeros alrededor del grupo */
+            border-radius: 5px; /* Bordes redondeados */
+            padding: 10px; /* Espacio interno */
+            margin-bottom: 10px; /* Espacio entre los grupos */
+            background-color: #f9f9f9; /* Fondo ligeramente gris */
+        }
+
+        .popup-group p {
+            margin: 5px 0; /* Márgenes más pequeños */
+        }
+
+        .popup-group strong {
+            color: #333; /* Texto en un gris más oscuro */
+        }
+
+        .popup-group:last-child {
+            margin-bottom: 0; /* Elimina el margen inferior del último grupo */
+        }
+
+        #popup-title {
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        #hover-popup {
+            position: absolute;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.7); /* Fondo negro/gris transparente */
+            color: white; /* Texto en blanco */
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none; /* Evitar que interfiera con otros eventos del ratón */
+            z-index: 2;
+            display: none; /* Oculto por defecto */
+        }
+
+        .popup-separator {
+            border-bottom: 1px solid white;
+            margin: 5px 0; /* Espacio entre la línea y los textos */
+        }
+
+        .popup-header-small {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px; /* Tamaño de fuente más grande para D y SC */
+            margin-bottom: 5px; /* Espacio extra debajo de D y SC */
+        }
+
+        .popup-header-small span {
+            flex: 1;
+            text-align: left; /* Alinear texto a la izquierda */
+        }
+
+        .popup-header-small span:last-child {
+            text-align: right; /* Alinear SC a la derecha */
+            margin-left: 5px; /* Espacio de 5px entre D y SC */
+        }
+
+        .popup-value {
+            font-size: 16px; /* Tamaño de fuente más grande para el valor */
+            text-align: center; /* Centrar el valor */
+        }
+
+        #legend {
+            background: white;
+            border-radius: 5px;
+            bottom: 30px;
+            padding: 10px;
+            font-size: 18px;
+            color: #374547;
+            position: fixed;
+            text-align: center;
+            z-index: 1;
+            right: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            width: 200px;
+        }
+
+        #legend h3 {
+            color: #000000; /* Título en negro */
+            margin: 0;
+        }
+
+        #legend p {
+            font-size: 12px; /* Subtítulo un poco más grande */
+            margin: 5px 0 5px 0; /* Menos separación entre el título y el subtítulo */
+            color: #000000; /* Subtítulo en negro */
+        }
+
+        .legend-separator {
+            height: 2px;
+            background-color: #ccc; /* Línea negra */
+            margin: 5px 0; /* Espacio entre la línea y los elementos */
+        }
+
+        .legend-item {
+            display: flex;
+            justify-content: space-between; /* Espacio entre las columnas */
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-gradient {
+            height: 20px;
+            width: 100%;
+            background: linear-gradient(to right, #b3e5fc, #0288d1, #01579b);
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-left: 30px;
+        }
+
+        .legend-item span {
+            text-align: center;
+            flex: 1;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .backButton {
+            position: absolute;
+            top: 20px; /* Ajusta esta cantidad según tu preferencia */
+            left: 20px; /* Ajusta esta cantidad según tu preferencia */
+            z-index: 999; /* Asegura que el botón esté sobre otros elementos si es necesario */
+            padding: 10px 50px;
+            background-color: #B5B5B5; /* Color de fondo del botón */
+            color: #000000; /* Color del texto del botón */
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        #opacity-slider {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* Estilo del slider */
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #ccc; /* Rojo */
+            background-image: linear-gradient(90deg, #fff 0%, #ccc 50%, #000 100%);
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        /* Estilo del "thumb" del slider en WebKit (Chrome, Safari) */
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #ccc;
+            background-image: linear-gradient(160deg, #ccc 0%, #ccc 100%);
+            cursor: pointer;
+        }
+
+        /* Estilo del "thumb" del slider en Firefox */
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #ccc;
+            background-image: linear-gradient(160deg, #ccc 0%, #ccc 100%);
+            cursor: pointer;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: none;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            
+        }
+        .navbar button {
+            padding: 10px 15px;
+            border: none;
+            background-color: white;
+            color: black;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .navbar button:hover {
+            background-color: silver;
+            transform: scale(1.05);
+        }
+        .active {
+            background-color: silver;
+            color: silver;
+            font-weight: bold;
+        }
+        body {
+            margin-top: 60px;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 60px; /* Mantiene la separación con la parte superior */
+            left: -25%; /* Oculto inicialmente fuera de la pantalla */
+            width: 25%;
+            height: 75vh; /* 75% de la altura de la pantalla */
+            background-color: white;
+            box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s ease-in-out;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            max-height: 100vh;
+            padding-top: 0px; /* Elimina el espacio extra arriba */
+            border-radius: 0 10px 10px 0; /* Bordes redondeados en la esquina derecha */
+        }
+
+        #section-title {
+            position: sticky;
+            top: 0;
+            background-color: white; /* Evita transparencia */
+            z-index: 20; /* Asegura que esté por encima */
+            padding: 10px;
+            border-bottom: 2px solid #ccc;
+            text-align: center;
+            margin-top: 0; /* Elimina el espacio superior */
+            border-radius: 10px 10px 0 0; /* Bordes redondeados arriba */
+        }
+
+
+        #sidebar.open {
+            left: 0%; /* Barra lateral visible a la izquierda */
+        }
+
+        #sidebar h2 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            float: right;
+        }
+
+        #population-box {
+            margin-top: 20px;
+            margin-left: 20px;
+
+        }
+
+        #population-gradient {
+            width: 80%;
+            height: 30px;
+            background: linear-gradient(to right, #ffcfcf, #ff5e5e, #FF0000);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        #population-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: black;
+            left: 0;
+        }
+
+        #population-title {
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        #population-values {
+            position: relative;
+            display: flex;
+            justify-content: space-between; /* Espacio entre los extremos */
+            width: 100%;
+            font-size: 12px;
+            top: 5px; /* Ajustar espacio entre el gradiente y los valores */
+        }
+
+        #min-value, #max-value {
+            font-size: 12px;
+            position: absolute;
+            bottom: -20px; /* Posición debajo de la barra */
+        }
+
+        #min-value {
+            left: 0;
+        }
+
+        #max-value {
+            right: 20%; /* Posicionar en el extremo derecho */
+        }
+
+        #population-value {
+            font-weight: bold;
+            font-size: 14px;
+            position: absolute;
+            top: 5px; /* Espacio para el valor debajo de la línea */
+            width: 100%;
+        }
+
+        #age-box {
+            margin-top: 40px;
+            margin-left: 20px;
+
+        }
+
+        #age-gradient {
+            width: 80%;
+            height: 30px;
+            background: linear-gradient(to right, #e1f7d5, #3c9f64, #004d2b);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        #age-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: black;
+            left: 0;
+        }
+
+        #age-title {
+            font-size: 16px;
+            font-weight: normal;
+        }
+
+        #age-values {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 12px;
+            top: 5px;
+        }
+
+        #min-age-value, #max-age-value {
+            font-size: 12px;
+            position: absolute;
+            bottom: -20px;
+        }
+
+        #min-age-value {
+            left: 0;
+        }
+
+        #max-age-value {
+            right: 20%;
+        }
+
+        #age-value {
+            font-weight: bold;
+            font-size: 14px;
+            position: absolute;
+            top: 5px;
+            width: 100%;
+        }
+
+       /* Menor18 */
+#minor18-box {
+    margin-top: 40px;
+    margin-left: 20px;
+
+}
+
+#minor18-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #f1c0f1, #f07dff, #6c1f9e);
+    border-radius: 10px;
+    position: relative;
+}
+
+#minor18-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#minor18-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#minor18-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-minor18-value, #max-minor18-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-minor18-value {
+    left: 0;
+}
+
+#max-minor18-value {
+    right: 20%;
+}
+
+#minor18-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+/* Major65 */
+#major65-box {
+    margin-top: 40px;
+    margin-left: 20px;
+
+}
+
+#major65-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #ffdfa2, #ffbd44, #c77a00);
+    border-radius: 10px;
+    position: relative;
+}
+
+#major65-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#major65-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#major65-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-major65-value, #max-major65-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-major65-value {
+    left: 0;
+}
+
+#max-major65-value {
+    right: 20%;
+}
+
+#major65-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+/* Persones per Habitatge */
+#persones-per-habitatge-box {
+    margin-top: 40px;
+    margin-left: 20px;
+
+}
+
+#persones-per-habitatge-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #fff8a1, #ffc107, #ff5722);
+
+    border-radius: 10px;
+    position: relative;
+}
+
+#persones-per-habitatge-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#persones-per-habitatge-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#persones-per-habitatge-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-persones-per-habitatge-value, #max-persones-per-habitatge-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-persones-per-habitatge-value {
+    left: 0;
+}
+
+#max-persones-per-habitatge-value {
+    right: 20%;
+}
+
+#persones-per-habitatge-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+/* Habitatges Unipersonals */
+#unipersonals-box {
+    margin-top: 40px;
+    margin-left: 20px;
+
+}
+
+#unipersonals-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #b3e5fc, #0288d1, #01579b);
+    border-radius: 10px;
+    position: relative;
+}
+
+#unipersonals-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#unipersonals-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#unipersonals-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-unipersonals-value, #max-unipersonals-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-unipersonals-value {
+    left: 0;
+}
+
+#max-unipersonals-value {
+    right: 20%;
+}
+
+#unipersonals-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+/* Índice de Gini */
+#gini-box {
+    margin-top: 40px;
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+#gini-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #d1c4e9, #7e57c2, #4a148c);
+    border-radius: 10px;
+    position: relative;
+}
+
+#gini-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#gini-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#gini-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-gini-value, #max-gini-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-gini-value {
+    left: 0;
+}
+
+#max-gini-value {
+    right: 20%;
+}
+
+#gini-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+/* Ràtio P80/P20 */
+#p80p20-box {
+    margin-top: 40px;
+    margin-bottom: 20px;
+    margin-left: 20px;
+}
+
+#p80p20-gradient {
+    width: 80%;
+    height: 30px;
+    background: linear-gradient(to right, #64b5f6, #ffeb3b, #d32f2f);
+    border-radius: 10px;
+    position: relative;
+}
+
+#p80p20-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: black;
+    left: 0;
+}
+
+#p80p20-title {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#p80p20-values {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 12px;
+    top: 5px;
+}
+
+#min-p80p20-value, #max-p80p20-value {
+    font-size: 12px;
+    position: absolute;
+    bottom: -20px;
+}
+
+#min-p80p20-value {
+    left: 0;
+}
+
+#max-p80p20-value {
+    right: 20%;
+}
+
+#p80p20-value {
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+    top: 5px;
+    width: 100%;
+}
+
+    </style>
+</head>
+<body> 
+    <a href="index.html" id="backButton">Inici</a>
+    <div id="map"></div>
+    <div id="popup-container">
+        <div class="popup-header">
+            <h3 id="popup-title"></h3>
+        </div>
+        <div id="popup-content"></div>
+    </div>
+
+    <div id="legend">
+        <h3>Habitatges Unipersonals</h3>
+        <p>(Percentatge per secció censal)</p>
+        <div class="legend-separator"></div> <!-- Línea de separación -->
+        
+        <!-- Gradiente -->
+        <div class="legend-gradient"></div>
+    
+        <!-- Etiquetas -->
+        <div class="legend-labels">
+            <span>12.4</span>
+            <span>25.4</span>
+            <span>38.5</span>
+        </div>
+
+        <label for="opacity-slider">Opacitat:</label>
+        <input type="range" id="opacity-slider" class="slider" min="0" max="1" step="0.1" value="0.7">
+    </div>
+
+    <div id="sidebar">
+        <h2 id="section-title"></h2>
+        <div id="section-info"></div>
+    
+        <!-- Població -->
+        <div id="population-box">
+            <h3 id="population-title">Població:</h3>
+            <div id="population-gradient">
+                <div id="population-marker"></div>
+            </div>
+            <div id="population-values">
+                <span id="min-value">616</span>
+                <span id="population-value"></span>
+                <span id="max-value">2822</span>
+            </div>
+        </div>
+    
+        <!-- Edat Mitjana -->
+        <div id="age-box">
+            <h3 id="age-title">Edat Mitjana:</h3>
+            <div id="age-gradient">
+                <div id="age-marker"></div>
+            </div>
+            <div id="age-values">
+                <span id="min-age-value">33.4</span>
+                <span id="age-value"></span>
+                <span id="max-age-value">49.0</span>
+            </div>
+        </div>
+    
+        <!-- Menor18 -->
+        <div id="minor18-box">
+            <h3 id="minor18-title">Menor de 18:</h3>
+            <div id="minor18-gradient">
+                <div id="minor18-marker"></div>
+            </div>
+            <div id="minor18-values">
+                <span id="min-minor18-value">12.6</span>
+                <span id="minor18-value"></span>
+                <span id="max-minor18-value">31.5</span>
+            </div>
+        </div>
+    
+        <!-- Major65 -->
+        <div id="major65-box">
+            <h3 id="major65-title">Major de 65:</h3>
+            <div id="major65-gradient">
+                <div id="major65-marker"></div>
+            </div>
+            <div id="major65-values">
+                <span id="min-major65-value">5.9</span>
+                <span id="major65-value"></span>
+                <span id="max-major65-value">29.7</span>
+            </div>
+        </div>
+
+        <div id="persones-per-habitatge-box">
+            <h3 id="persones-per-habitatge-title">Persones per Habitatge:</h3>
+            <div id="persones-per-habitatge-gradient">
+                <div id="persones-per-habitatge-marker"></div>
+            </div>
+            <div id="persones-per-habitatge-values">
+                <span id="min-persones-per-habitatge-value">2.3</span>
+                <span id="persones-per-habitatge-value"></span>
+                <span id="max-persones-per-habitatge-value">3.7</span>
+            </div>
+        </div>
+    
+        <!-- Habitatges Unipersonals -->
+        <div id="unipersonals-box">
+            <h3 id="unipersonals-title">Habitatges Unipersonals:</h3>
+            <div id="unipersonals-gradient">
+                <div id="unipersonals-marker"></div>
+            </div>
+            <div id="unipersonals-values">
+                <span id="min-unipersonals-value">12.4</span>
+                <span id="unipersonals-value"></span>
+                <span id="max-unipersonals-value">38.5</span>
+            </div>
+        </div>
+        <div id="p80p20-box">
+            <h3 id="p80p20-title">Ràtio P80/P20:</h3>
+            <div id="p80p20-gradient">
+                <div id="p80p20-marker"></div>
+            </div>
+            <div id="p80p20-values">
+                <span id="min-p80p20-value">1.8</span>
+                <span id="p80p20-value"></span>
+                <span id="max-p80p20-value">3</span>
+            </div>
+        </div>
+
+        <div id="gini-box">
+            <h3 id="gini-title">Índex de Gini:</h3>
+            <div id="gini-gradient">
+                <div id="gini-marker"></div>
+            </div>
+            <div id="gini-values">
+                <span id="min-gini-value">20.6</span>
+                <span id="gini-value"></span>
+                <span id="max-gini-value">36.7</span>
+            </div>
+        </div>
+    </div>
+
+    <svg width="100%" height="500">
+        <rect id="seccio1" x="50" y="50" width="100" height="100" fill="blue" stroke="black" cursor="pointer"/>
+    </svg>
+
+    <div class="navbar"> 
+        <button onclick="location.href='Població.html'" >Població</button>
+        <button onclick="location.href='EdatMitja.html'">Edat Mitjana</button>
+        <button onclick="location.href='Menors18.html'">Menors de 18</button>
+        <button onclick="location.href='Majors65.html'">Majors de 65</button>
+        <button onclick="location.href='PersonesPerHabitatge.html'">Persones per Habitatge</button>
+        <button onclick="location.href='HabitatgesUnipersonals.html'" selected>Habitatges Unipersonals</button>
+        <button onclick="location.href='RàtioP80P20.html'">Ràtio P80/P20</button>
+        <button onclick="location.href='Gini.html'" >Índex de Gini</button>
+    </div>
+
+    <div id="hover-popup">
+        <div class="popup-header-small">
+            <span id="popup-districte"></span>
+            <span id="popup-seccio"></span>
+        </div>
+        <div class="popup-separator"></div>
+        <div class="popup-value" id="popup-value"></div>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoicGF1YmVsbG9wZXJleiIsImEiOiJjbHdtNjhmcXMwY2d6MmlyejNycXRwZzVsIn0.2Wly8_VtO0BfDMgmfYfxNw';
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [2.014, 41.5632],
+    zoom: 12
+});
+
+window.addEventListener('message', function (event) {
+    if (event.data.action === 'setView') {
+        map.setCenter(event.data.center);
+        map.setZoom(event.data.zoom);
+    } else if (event.data.action === 'getView') {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        event.source.postMessage({ action: 'viewChanged', center: [center.lng, center.lat], zoom: zoom }, event.origin);
+    }
+});
+
+map.on('moveend', function () {
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    window.parent.postMessage({ action: 'viewChanged', center: [center.lng, center.lat], zoom: zoom }, '*');
+});
+
+var seccionesData = {};
+
+// Cargar y procesar el archivo CSV
+Papa.parse('IndicadoresDemográficosTerrassa - copia.csv', {
+download: true,
+header: true,
+delimiter: ';',
+complete: function (results) {
+results.data.forEach(function (row) {
+    console.log(row);  // Ver todas las filas
+    var key = row.Districte + '-' + row.Secció;
+    seccionesData[key] = {
+        ...row,
+        'Població': parseFloat(row['Població']),
+        'EdatMitjana': parseFloat(row['EdatMitjana']),
+        'Menor18': parseFloat(row['Menor18']),
+        'Major65': parseFloat(row['Major65']),
+        'PersonesXHabitatge': parseFloat(row['PersonesXHabitatge']),
+        'Unipersonals': parseFloat(row['Unipersonals']),
+        'Gini': parseFloat(row['Gini']),
+        'P80/P20': parseFloat(row['P80/P20'])  // Asegúrate de que la columna 'EdatMitjana' existe y tiene datos
+    };
+
+    // Depuración: Imprimir los valores de Población y Edad Media
+    console.log(`Población para la sección ${key}: ${seccionesData[key]['Població']}`);
+    console.log(`Edad Media para la sección ${key}: ${seccionesData[key]['EdatMitjana']}`);
+    console.log(`Persones per Habitatge para la sección ${key}: ${seccionesData[key]['PersonesXHabitatge']}`);
+    console.log(`Unipersonals para la sección ${key}: ${seccionesData[key]['Unipersonals']}`);
+    console.log(`Índex de Gini para la sección ${key}: ${seccionesData[key]['Gini']}`);
+    console.log(`Ràtio P80/P20 para la sección ${key}: ${seccionesData[key]['P80/P20']}`);
+});
+
+        // Después de cargar el CSV, cargar el GeoJSON
+        map.on('load', function() {
+            map.addSource('secciones-censales', {
+                type: 'geojson',
+                data: 'https://api.mapbox.com/datasets/v1/paubelloperez/cm6p1zyza3w4z1nn0enodmshb/features?access_token=' + mapboxgl.accessToken
+            });
+
+            // Añadir color basado en la renta
+            map.addLayer({
+                id: 'secciones-censales-layer',
+                type: 'fill',
+                source: 'secciones-censales',
+                paint: {
+                    'fill-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['to-number', ['get', 'Unipersonals']], 
+                        12.4, '#b3e5fc',   // Azul para el valor mínimo (más joven)
+                        25.4, '#0288d1',   // Amarillo intermedio
+                        38.5, '#01579b'    // Rojo para el valor máximo (más viejo)
+                    ],
+                    'fill-opacity': 0.7
+                }
+            });
+
+            map.addLayer({
+                id: 'secciones-censales-lines',
+                type: 'line',
+                source: 'secciones-censales',
+                paint: {
+                    'line-color': '#000',
+                    'line-width': 0.5
+                }
+            });
+
+            var selectedSection = null;
+
+            document.getElementById('opacity-slider').addEventListener('input', function(event) {
+                let opacityValue = parseFloat(event.target.value);
+                
+                // Asegurar que la capa existe antes de cambiar la opacidad
+                if (map.getLayer('secciones-censales-layer')) {
+                    map.setPaintProperty('secciones-censales-layer', 'fill-opacity', opacityValue);
+                }
+            });
+
+            map.on('click', function (e) {
+const features = map.queryRenderedFeatures(e.point, {
+layers: ['secciones-censales-layer']
+});
+
+if (features.length) {
+const feature = features[0];
+const sectionId = feature.properties.Secció || 'Desconocido';  // Verificar si existe
+const districtId = feature.properties.Districte || 'Desconocido'; // Verificar si existe
+const population = feature.properties.Població || 0;
+const age = parseFloat(feature.properties['EdatMitjana']) || 0; // Asegurarse de que sea un número
+const minor18 = parseFloat(feature.properties['Menor18']) || 0;
+const major65 = parseFloat(feature.properties['Major65']) || 0;
+const PersonesPerHabitatge = parseFloat(feature.properties['PersonesXHabitatge']) || 0;
+const unipersonals = parseFloat(feature.properties['Unipersonals']) || 0;
+const p80p20 = parseFloat(feature.properties['P80/P20']) || 0;
+const gini = parseFloat(feature.properties['Gini']) || 0;
+
+// Verificación de valores válidos
+console.log(`Población para la sección ${districtId}-${sectionId}: ${population}`);
+console.log(`Edad Media para la sección ${districtId}-${sectionId}: ${age}`);
+console.log(`Persones per Habitatge para la sección ${districtId}-${sectionId}: ${PersonesPerHabitatge}`);
+console.log(`Unipersonals para la sección ${districtId}-${sectionId}: ${unipersonals}`);
+console.log(`Índex de Gini para la sección ${districtId}-${sectionId}: ${gini}`);
+console.log(`Ràtio P80/P20 para la sección ${districtId}-${sectionId}: ${p80p20}`);
+
+// Cálculos de las posiciones relativas
+const minPopulation = 616;
+const maxPopulation = 2822;
+const populationPosition = (population - minPopulation) / (maxPopulation - minPopulation) * 100;
+
+const minAge = 33.4;
+const maxAge = 49.0;
+const agePosition = (age - minAge) / (maxAge - minAge) * 100;
+
+const minMinor18 = 12.6;
+const maxMinor18 = 31.5;
+const minor18Position = (minor18 - minMinor18) / (maxMinor18 - minMinor18) * 100;
+
+const minMajor65 = 5.9;
+const maxMajor65 = 29.7;
+const major65Position = (major65 - minMajor65) / (maxMajor65 - minMajor65) * 100;
+
+const minPersonesPerHabitatge = 2.3;
+const maxPersonesPerHabitatge = 3.7;
+const PersonesPerHabitatgePosition = (PersonesPerHabitatge - minPersonesPerHabitatge) / (maxPersonesPerHabitatge - minPersonesPerHabitatge) * 100;
+
+const minUnipersonals = 12.4;
+const maxUnipersonals = 38.5;
+const unipersonalsPosition = (unipersonals - minUnipersonals) / (maxUnipersonals - minUnipersonals) * 100;
+
+const minP80P20 = 1.8;
+const maxP80P20 = 3;
+const p80p20Position = (p80p20 - minP80P20) / (maxP80P20 - minP80P20) * 100;
+
+const minGini = 20.6;
+const maxGini = 36.7;
+const giniPosition = (gini - minGini) / (maxGini - minGini) * 100;
+
+// Actualizar el título con Districte y Secció, solo si los elementos existen
+const sectionTitleElement = document.getElementById('section-title');
+if (sectionTitleElement) {
+    sectionTitleElement.innerText = `Districte: ${districtId} - Secció: ${sectionId}`;
+}
+
+// Actualizar los gradientes y valores, solo si los elementos existen
+const populationTitleElement = document.getElementById('population-title');
+const ageTitleElement = document.getElementById('age-title');
+const minor18TitleElement = document.getElementById('minor18-title');
+const major65TitleElement = document.getElementById('major65-title');
+const PersonesPerHabitatgeTitleElement = document.getElementById('persones-per-habitatge-title');
+const unipersonalsTitleElement = document.getElementById('unipersonals-title');
+const p80p20TitleElement = document.getElementById('p80p20-title');
+const giniTitleElement = document.getElementById('gini-title');
+
+if (populationTitleElement) populationTitleElement.innerText = `Població: ${population}`;
+if (ageTitleElement) ageTitleElement.innerText = `Edat Mitjana: ${age}`;
+if (minor18TitleElement) minor18TitleElement.innerText = `Menors de 18: ${minor18}`;
+if (major65TitleElement) major65TitleElement.innerText = `Majors de 65: ${major65}`;
+if (PersonesPerHabitatgeTitleElement) PersonesPerHabitatgeTitleElement.innerText = `Persones per Habitatge: ${PersonesPerHabitatge}`;
+if (unipersonalsTitleElement) unipersonalsTitleElement.innerText = `Habitatges Unipersonals: ${unipersonals}`;
+if (p80p20TitleElement) p80p20TitleElement.innerText = `Ràtio P80/P20: ${p80p20}`;
+if (giniTitleElement) giniTitleElement.innerText = `Índex de Gini: ${gini}`;
+
+// Posicionar los marcadores solo si los elementos existen
+const populationMarker = document.getElementById('population-marker');
+const ageMarker = document.getElementById('age-marker');
+const minor18Marker = document.getElementById('minor18-marker');
+const major65Marker = document.getElementById('major65-marker');
+const PersonesPerHabitatgeMarker = document.getElementById('persones-per-habitatge-marker');
+const unipersonalsMarker = document.getElementById('unipersonals-marker');
+const p80p20Marker = document.getElementById('p80p20-marker');
+const giniMarker = document.getElementById('gini-marker');
+
+if (populationMarker) populationMarker.style.left = `calc(${populationPosition}% - 1px)`;
+if (ageMarker) ageMarker.style.left = `calc(${agePosition}% - 1px)`;
+if (minor18Marker) minor18Marker.style.left = `calc(${minor18Position}% - 1px)`;
+if (major65Marker) major65Marker.style.left = `calc(${major65Position}% - 1px)`;
+if (PersonesPerHabitatgeMarker) PersonesPerHabitatgeMarker.style.left = `calc(${PersonesPerHabitatgePosition}% - 1px)`;
+if (unipersonalsMarker) unipersonalsMarker.style.left = `calc(${unipersonalsPosition}% - 1px)`;
+if (p80p20Marker) p80p20Marker.style.left = `calc(${p80p20Position}% - 1px)`;
+if (giniMarker) giniMarker.style.left = `calc(${giniPosition}% - 1px)`;
+
+// Mostrar la barra lateral
+selectedSection = (selectedSection === sectionId) ? null : sectionId;
+document.getElementById('sidebar').classList.add('open');
+} else {
+selectedSection = null;
+map.setPaintProperty('secciones-censales-layer', 'fill-color', [
+    'interpolate',
+    ['linear'],
+    ['to-number', ['get', 'Unipersonals']], 
+                        12.4, '#b3e5fc',   // Azul para el valor mínimo (más joven)
+                        25.4, '#0288d1',   // Amarillo intermedio
+                        38.5, '#01579b'
+]);
+document.getElementById('sidebar').classList.remove('open');
+}
+});
+
+map.on('mouseenter', 'secciones-censales-layer', function () {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'secciones-censales-layer', function () {
+                map.getCanvas().style.cursor = '';
+                document.getElementById('hover-popup').style.display = 'none'; // Ocultar popup al salir
+            });
+
+            map.on('mousemove', 'secciones-censales-layer', function(e) {
+                var feature = e.features[0];
+                var distrito = feature.properties.Districte;
+                var seccion = feature.properties.Secció;
+                var Unipersonals = feature.properties['Unipersonals'].toFixed(1);
+
+                // Actualizar los elementos del popup
+                document.getElementById('popup-districte').textContent = 'D:' + distrito;
+                document.getElementById('popup-seccio').textContent = 'SC:' + seccion;
+                document.getElementById('popup-value').textContent = Unipersonals;
+
+                // Posicionar el popup cerca del cursor
+                var hoverPopup = document.getElementById('hover-popup');
+                hoverPopup.style.left = (e.originalEvent.pageX + 10) + 'px'; // Posicionar un poco a la derecha del cursor
+                hoverPopup.style.top = (e.originalEvent.pageY - 30) + 'px'; // Posicionar un poco encima del cursor
+                hoverPopup.style.display = 'block'; // Mostrar el popup
+            });
+
+            // Cerrar el popup cuando se hace clic fuera de una sección censal
+            map.on('click', function (e) {
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['secciones-censales-layer']
+                });
+                if (!features.length) {
+                    document.getElementById('popup-container').style.display = 'none';
+                }
+            });
+            
+        });
+        
+    
+
+function openSidebar() {
+    document.getElementById("sidebar").classList.add("open");
+}
+
+// Función para cerrar el menú lateral
+function closeSidebar() {
+    document.getElementById("sidebar").classList.remove("open");
+}
+
+// Asociar evento de clic a la sección censal
+document.getElementById("seccio1").addEventListener("click", openSidebar);
+    }
+});
+    </script>
+</body>
+
+</html>
